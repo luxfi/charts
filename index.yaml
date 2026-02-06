@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  lux-node:
+  - apiVersion: v2
+    appVersion: "1.0.0"
+    created: "2026-02-06T06:15:14Z"
+    description: Lux Network blockchain node
+    digest: ""
+    name: lux-node
+    type: application
+    urls:
+    - https://github.com/luxfi/charts/releases/download/lux-node-0.1.0/lux-node-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-02-06T06:17:00Z"
