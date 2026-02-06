@@ -1,0 +1,11 @@
+apiVersion: v2
+name: lux-node
+description: Lux Network blockchain node
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+home: https://lux.network
+icon: https://lux.network/icon.png
+maintainers:
+  - name: Lux Network
+    email: ops@lux.network
