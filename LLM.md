@@ -1,25 +1,7 @@
-# LLM.md - Hanzo Charts
+# charts — AI Assistant Context
 
-## Overview
+# Lux Charts
+
 Helm charts for Lux blockchain infrastructure.
 
-## Tech Stack
-- **Language**: Unknown
-
-## Build & Run
-```bash
-
-
-```
-
-## Structure
-```
-charts/
-  LICENSE
-  README.md
-  charts/
-  ct.yaml
-```
-
-## Key Files
-- `README.md` -- Project documentation
+## Charts
