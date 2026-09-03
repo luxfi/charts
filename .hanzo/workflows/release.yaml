@@ -1,0 +1,58 @@
+name: Release
+
+# Publishes each chart as an OCI artifact to ghcr.io/luxfi/charts on the native
+# runners. A chart installs straight from the registry that already serves the
+# images it deploys, so there is one place to fetch from and no pages branch to
+# keep in step.
+#
+# ghcr auth: GHCR_USER / GHCR_TOKEN — org Actions secrets on this forge.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: [lux-build-linux-amd64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install helm
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
+            | HELM_INSTALL_DIR=/usr/local/bin bash
+          helm version --short
+
+      - name: Lint every chart
+        run: |
+          for c in charts/*/; do
+            echo "== lint $c"
+            helm lint "$c"
+          done
+
+      - name: Render every chart against each values file
+        run: |
+          for c in charts/*/; do
+            for v in "$c"values-*.yaml; do
+              [ -e "$v" ] || continue
+              echo "== template $c with $(basename "$v")"
+              helm template check "$c" -f "$v" > /dev/null
+            done
+          done
+
+      - name: Log in to ghcr
+        run: |
+          echo "${{ secrets.GHCR_TOKEN }}" \
+            | helm registry login ghcr.io -u "${{ secrets.GHCR_USER }}" --password-stdin
+
+      - name: Package and push
+        run: |
+          mkdir -p dist
+          for c in charts/*/; do
+            helm package "$c" -d dist
+          done
+          for pkg in dist/*.tgz; do
+            echo "== push $pkg"
+            helm push "$pkg" oci://ghcr.io/luxfi/charts
+          done
