@@ -1,0 +1,73 @@
+# A validator set for one network. Per-network values live beside this file
+# (values-lux.yaml, values-hanzo.yaml, values-zoo.yaml); the universe repos
+# supply the exact pin per environment.
+
+replicas: 5
+
+image:
+  repository: ghcr.io/luxfi/node
+  # Empty tag follows Chart.appVersion. Set digest to pin exactly — a digest
+  # wins over the tag, and a floating tag never reaches a cluster.
+  tag: ""
+  digest: ""
+  pullPolicy: IfNotPresent
+
+pullSecrets: []
+
+# The network these validators form. id is the primary network id: 1/2/3 for
+# Lux mainnet/testnet/local, and for a sovereign L1 it equals that chain's
+# EVM id, so one id names one network everywhere.
+network:
+  id: 1
+  # Inline genesis JSON. Empty uses the build's own genesis for network.id.
+  genesis: ""
+  # Chain configs, keyed by chain alias: chains.C is written to C/config.json.
+  chains: {}
+
+ports:
+  http: 9630
+  staking: 9631
+
+db: zapdb
+
+# Extra luxd flags, as a list of "--flag=value".
+args: []
+
+storage:
+  size: 200Gi
+  class: ""
+
+resources:
+  requests:
+    cpu: "2"
+    memory: 8Gi
+  limits:
+    memory: 16Gi
+
+# Paths are the node's own probe endpoints. Readiness reports bootstrap and
+# router state; liveness reports only that the process serves, so a node that
+# is still catching up is left alone instead of being restarted.
+probes:
+  readiness: /v1/health/ops/readiness
+  liveness: /v1/health/ops/liveness
+  # Bootstrapping a large chain takes a while — the startup probe grants that
+  # time, and liveness only starts counting once it passes.
+  startupSeconds: 1800
+
+service:
+  type: ClusterIP
+  annotations: {}
+
+budget:
+  # One validator may be unavailable at a time; consensus keeps its margin.
+  maxUnavailable: 1
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

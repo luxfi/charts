@@ -1,0 +1,11 @@
+{{- if gt (int .Values.replicas) 1 }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "node.fullname" . }}
+  labels: {{- include "node.labels" . | nindent 4 }}
+spec:
+  maxUnavailable: {{ .Values.budget.maxUnavailable }}
+  selector:
+    matchLabels: {{- include "node.selector" . | nindent 6 }}
+{{- end }}

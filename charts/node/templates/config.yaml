@@ -1,0 +1,16 @@
+{{- if or .Values.network.genesis .Values.network.chains }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "node.fullname" . }}
+  labels: {{- include "node.labels" . | nindent 4 }}
+data:
+  {{- if .Values.network.genesis }}
+  genesis.json: |
+{{ .Values.network.genesis | indent 4 }}
+  {{- end }}
+  {{- range $alias, $cfg := .Values.network.chains }}
+  chain-{{ $alias }}.json: |
+{{ toPrettyJson $cfg | indent 4 }}
+  {{- end }}
+{{- end }}

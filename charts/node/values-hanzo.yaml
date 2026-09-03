@@ -1,0 +1,7 @@
+# Hanzo L1 — sovereign, so its primary network id equals its EVM id.
+network:
+  id: 36963
+
+image:
+  tag: "1.36.181"
+  digest: "sha256:3ff4841e76b407e774b59ea33cdb691bc0b5b6dfdebc0e5ea71bd1119d059cad"

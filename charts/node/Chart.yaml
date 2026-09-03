@@ -1,0 +1,17 @@
+apiVersion: v2
+name: node
+description: A Lux network validator — luxd, its chains and its peer identity.
+type: application
+version: 0.1.0
+# The node build this chart deploys unless values pin one explicitly.
+appVersion: "1.36.181"
+home: https://lux.network
+sources:
+  - https://github.com/luxfi/node
+maintainers:
+  - name: Lux Industries Inc
+    url: https://lux.network
+keywords:
+  - lux
+  - validator
+  - consensus

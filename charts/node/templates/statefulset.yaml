@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "node.fullname" . }}
+  labels: {{- include "node.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "node.fullname" . }}-peer
+  replicas: {{ .Values.replicas }}
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels: {{- include "node.selector" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "node.labels" . | nindent 8 }}
+      annotations:
+        # Roll the set when genesis or chain config changes.
+        lux.network/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum | trunc 16 }}
+        {{- with .Values.podAnnotations }}{{- toYaml . | nindent 8 }}{{- end }}
+    spec:
+      serviceAccountName: {{ include "node.serviceAccountName" . }}
+      {{- with .Values.pullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: node
+          image: {{ include "node.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --network-id={{ .Values.network.id }}
+            - --http-host=0.0.0.0
+            - --http-port={{ .Values.ports.http }}
+            - --staking-port={{ .Values.ports.staking }}
+            - --data-dir=/data
+            - --db-type={{ .Values.db }}
+            {{- if .Values.network.genesis }}
+            - --genesis-file=/genesis/genesis.json
+            {{- end }}
+            {{- if .Values.network.chains }}
+            - --chain-config-dir=/chainconf
+            {{- end }}
+            {{- with .Values.args }}{{- toYaml . | nindent 12 }}{{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.ports.http }}
+            - name: staking
+              containerPort: {{ .Values.ports.staking }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness }}
+              port: http
+            periodSeconds: 10
+            failureThreshold: {{ div .Values.probes.startupSeconds 10 }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness }}
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness }}
+              port: http
+            periodSeconds: 30
+            failureThreshold: 5
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            {{- if .Values.network.genesis }}
+            - name: config
+              mountPath: /genesis/genesis.json
+              subPath: genesis.json
+            {{- end }}
+            {{- range $alias, $_ := .Values.network.chains }}
+            - name: config
+              mountPath: /chainconf/{{ $alias }}/config.json
+              subPath: chain-{{ $alias }}.json
+            {{- end }}
+      volumes:
+        {{- if or .Values.network.genesis .Values.network.chains }}
+        - name: config
+          configMap:
+            name: {{ include "node.fullname" . }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.storage.class }}
+        storageClassName: {{ .Values.storage.class }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.storage.size }}
